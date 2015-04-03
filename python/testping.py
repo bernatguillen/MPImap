@@ -97,5 +97,7 @@ for alpha in alphas:
 fig = plt.figure()
 ax = fig.add_subplot(211)
 ax.plot(alphas,FP)
+plt.title("False Positives probability")
 ax = fig.add_subplot(212)
 ax.plot(alphas[:-1],maxwait[:-1])
+plt.title("Number of pings")
