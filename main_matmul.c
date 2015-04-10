@@ -52,19 +52,17 @@ int main(int argc, char **argv){
     C = (double **) malloc(sizeof(double *)*NRA); 
     dataC = (double *) malloc(sizeof(double)*NRA*NCB); 
     for(int i=0; i<NRA; i++){
-      A[i] = (double *) &(dataA[NCA*i]);
+      A[i] = &(dataA[NCA*i]);
     }  
     for(int i=0; i<NCA; i++){
-      B[i] = (double *) &(dataB[NCB*i]);
+      B[i] = &(dataB[NCB*i]);
     }  
     for(int i=0; i<NRA; i++){
-      C[i] = (double *) &(dataC[NCB*i]);
+      C[i] = &(dataC[NCB*i]);
     }  
     initializeMatrix(A, NRA, NCA);
     initializeMatrix(B, NCA, NCB);
-    printf("here i am\n");
     MPI_Bcast(B, NCA*NCB, MPI_DOUBLE, 0, MPI_COMM_WORLD); //Broadcast
-
     averow = NRA/nworkers;
     extra = NRA%nworkers;
     offset = 0;
@@ -92,7 +90,7 @@ int main(int argc, char **argv){
     B = (double **) malloc(sizeof(double *)*NCA); 
     dataB = (double *) malloc(sizeof(double)*NCA*NCB); 
     for(int i=0; i<NCA; i++){
-      B[i] = (double *) &(dataB[NCB*i]);
+      B[i] = &(dataB[NCB*i]);
     }  
 
     MPI_Bcast(B, NCA*NCB, MPI_DOUBLE, 0, MPI_COMM_WORLD);
@@ -106,7 +104,7 @@ int main(int argc, char **argv){
     for(i = 0; i<rows; ++i){
       A[i] = &(dataA[NCA*i]);
     }
-    MPI_Recv(&A, rows*NCA, MPI_INT, MASTER, mtype, MPI_COMM_WORLD, &stat);
+    MPI_Recv(&A, rows*NCA, MPI_DOUBLE, MASTER, mtype, MPI_COMM_WORLD, &stat);
     double **C = malloc(rows*sizeof(double *));
     double *dataC = (double *) malloc(sizeof(double)*NCB*rows); 
     for(i = 0; i<rows; ++i){
