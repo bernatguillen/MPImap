@@ -63,13 +63,11 @@ int main(int argc, char **argv){
     }  
     initializeMatrix(A, NRA, NCA);
     initializeMatrix(B, NCA, NCB);
-    MPI_Bcast(B, NCA*NCB, MPI_DOUBLE, 0, MPI_COMM_WORLD); //Broadcast
+    MPI_Bcast(&(B[0][0]), NCA*NCB, MPI_DOUBLE, 0, MPI_COMM_WORLD); //Broadcast
     averow = NRA/nworkers;
     extra = NRA%nworkers;
     offset = 0;
     mtype = FROM_MASTER;
-    printf("master before sends \n");
-    printf("%d %d\n",NCB,rows);
     for(dest = 1; dest<nprocs; ++dest){
       rows = (dest <= extra) ? averow+1 : averow;      
       MPI_Isend(&offset, 1, MPI_INT, dest, mtype, MPI_COMM_WORLD,ireq + dest-1);
@@ -77,18 +75,16 @@ int main(int argc, char **argv){
       MPI_Isend(&A[offset][0], rows*NCA, MPI_DOUBLE, dest, mtype, MPI_COMM_WORLD, ireq + 2*nworkers + dest - 1);
       offset += rows;
     }
-    printf("master after sends \n");
     MPI_Waitall(3*nworkers, ireq, &stat); //kyle: do we need to wait for the messages to complete before posting the recieves?
     mtype = FROM_WORKER;
-    for(source = 1; source < nprocs; ++dest){
+    for(source = 1; source < nprocs; ++source){
       MPI_Recv(&offset, 1, MPI_INT, source, mtype, MPI_COMM_WORLD, &stat);
       MPI_Recv(&rows, 1, MPI_INT, source, mtype, MPI_COMM_WORLD, &stat);
       //kyle edit: shouldnt this be rows*NCB?
       //      MPI_Recv(&C[offset][0], rows*NCA, MPI_DOUBLE, source, mtype, MPI_COMM_WORLD, &stat);
       MPI_Recv(&C[offset][0], rows*NCB, MPI_DOUBLE, source, mtype, MPI_COMM_WORLD, &stat);
     }
-
-    //free(ireq);
+    free(ireq);
   }else{ //Worker process
     double **B; 
     double *dataB;
@@ -99,27 +95,19 @@ int main(int argc, char **argv){
       B[i] = &(dataB[NCB*i]);
     }  
 
-    MPI_Bcast(B, NCA*NCB, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    MPI_Bcast(dataB, NCA*NCB, MPI_DOUBLE, 0, MPI_COMM_WORLD);
     //Synchronous receive (?)
     mtype = FROM_MASTER;
-    printf("worker before recvs \n");
     MPI_Recv(&offset, 1, MPI_INT, MASTER, mtype, MPI_COMM_WORLD, &stat);
     MPI_Recv(&rows, 1, MPI_INT, MASTER, mtype, MPI_COMM_WORLD, &stat);
-    printf("worker NCB: %d rows: %d\n",NCB,rows);
     double **A = (double **) malloc(rows*sizeof(double *));
     double *dataA = (double *) malloc(sizeof(double)*NCA*rows); 
-    for(i = 0; i<rows; ++i){
+     for(i = 0; i<rows; ++i){
       A[i] = &(dataA[NCA*i]);
     }
-    printf("worker before recv A \n");
-    MPI_Recv(&A, rows*NCA, MPI_DOUBLE, MASTER, mtype, MPI_COMM_WORLD, &stat);
-    printf("worker after recv A\n");
+    MPI_Recv(&(A[0][0]), rows*NCA, MPI_DOUBLE, MASTER, mtype, MPI_COMM_WORLD, &stat); 
     double **C = (double **) malloc(rows*sizeof(double *));
-    printf("worker after allocate C **\n");
-    printf("worker NCB: %d rows: %d\n",NCB,rows);
-    //KYLE: FOR SOME REASON, NCB AND ROWS GETS RESET FROM 10 LINES UP TO NOW
     double *dataC = (double *) malloc(sizeof(double)*NCB*rows); 
-    printf("worker after allocate C \n");
     for(i = 0; i<rows; ++i){
       C[i] = &(dataC[NCB*i]);
     }
@@ -131,20 +119,11 @@ int main(int argc, char **argv){
 	}
       }
     }
-    printf("worker after recvs \n");
     mtype = FROM_WORKER;
     MPI_Send(&offset, 1, MPI_INT, MASTER, mtype, MPI_COMM_WORLD);
     MPI_Send(&rows, 1, MPI_INT, MASTER, mtype, MPI_COMM_WORLD);
-    MPI_Send(&C, rows*NCB, MPI_DOUBLE, MASTER, mtype, MPI_COMM_WORLD);
-    /*for(i = 0; i<rows; ++i){
-      free(C[i]);
-      free(A[i]);
-    }
-    free(C);
-    free(A); */
+    MPI_Send(&(C[0][0]), rows*NCB, MPI_DOUBLE, MASTER, mtype, MPI_COMM_WORLD);
   }  
-  printf("hello world\n"); 
   MPI_Finalize();
   return(0);
-
 }
