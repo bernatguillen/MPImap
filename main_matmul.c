@@ -31,8 +31,9 @@ int main(int argc, char **argv){
   MPI_Status stat;
   MPI_Request *ireq;
   ireq = (MPI_Request *) malloc(3*nworkers);
-  if(nprocs < 2){
-    printf("Need at least two tasks\n");
+  if(nprocs < 2 || argc != 4){
+    if (myid == MASTER)
+      printf("usage: main_matmul NRA NCA NCB \n NRA: number of rows in A \n NCA: number of columns in A \n NCB: number of rows in B \n (NRB == NCA) \n");
     MPI_Abort(MPI_COMM_WORLD, rc);
     exit(1);
   }
@@ -43,6 +44,9 @@ int main(int argc, char **argv){
 
   /*Master task*/
   if (myid == MASTER){
+    //Begin timing
+    double time_s,time_f;
+    time_s = MPI_Wtime();
     double **A,**B,**C; 
     double *dataA,*dataB,*dataC;
     //make contiguous multiarrays
@@ -84,6 +88,8 @@ int main(int argc, char **argv){
       //      MPI_Recv(&C[offset][0], rows*NCA, MPI_DOUBLE, source, mtype, MPI_COMM_WORLD, &stat);
       MPI_Recv(&C[offset][0], rows*NCB, MPI_DOUBLE, source, mtype, MPI_COMM_WORLD, &stat);
     }
+    time_f = MPI_Wtime();
+    printf("computation took %lf seconds \n",time_f-time_s);
     free(ireq);
   }else{ //Worker process
     double **B; 
