@@ -23,8 +23,8 @@ int main(int argc, char **argv){
   int NRA,NCA,NCB;
   int rows; 
   MPI_Status status;
-
   MPI_Init(&argc,&argv);
+  MPI_Errhandler_set(MPI_COMM_WORLD, MPI_ERRORS_RETURN); //Does not immediately abort
   MPI_Comm_rank(MPI_COMM_WORLD,&myid);
   MPI_Comm_size(MPI_COMM_WORLD,&nprocs);
   nworkers = nprocs - 1;
