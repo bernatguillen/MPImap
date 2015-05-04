@@ -1,0 +1,5 @@
+#kyle’s laptop, 1000x1000 square matrices
+#nprocs runtime
+2 5.500167
+4 4.197977
+8
