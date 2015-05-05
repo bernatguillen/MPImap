@@ -79,12 +79,11 @@ int main(int argc, char **argv){
     for(dest = 1; dest<nprocs; ++dest){
       offset_m[dest] = offset_m[dest-1] + rows_m[dest-1];
       rows_m[dest] = (dest <= extra) ? averow+1 : averow;      
-      MPI_Isend(&offset_m[dest], 1, MPI_INT, dest, mtype, MPI_COMM_WORLD,ireq + dest-1);
-      MPI_Isend(&rows_m[dest], 1, MPI_INT, dest, mtype, MPI_COMM_WORLD, ireq + nworkers + dest-1);
-      MPI_Isend(&A[offset_m[dest]][0], rows_m[dest]*NCA, MPI_DOUBLE, dest, mtype, MPI_COMM_WORLD, ireq + 2*nworkers + dest - 1);
+      MPI_Send(&offset_m[dest], 1, MPI_INT, dest, mtype, MPI_COMM_WORLD);
+      MPI_Send(&rows_m[dest], 1, MPI_INT, dest, mtype, MPI_COMM_WORLD);
+      MPI_Send(&A[offset_m[dest]][0], rows_m[dest]*NCA, MPI_DOUBLE, dest, mtype, MPI_COMM_WORLD);
       printf("master sent to %d rows_m: %d offset_m: %d\n",dest,rows_m[dest],offset_m[dest]);
     }
-    //    MPI_Waitall(3*nworkers, ireq, &stat); //kyle: do we need to wait for the messages to complete before posting the recieves?
     mtype = FROM_WORKER;
     for(source = 1; source < nprocs; ++source){
       MPI_Recv(&offset, 1, MPI_INT, source, mtype, MPI_COMM_WORLD, &stat);
@@ -97,7 +96,7 @@ int main(int argc, char **argv){
     }
     time_f = MPI_Wtime();
     printf("computation took %lf seconds \n",time_f-time_s);
-    free(ireq);
+   
   }else{ //Worker process
     double **B; 
     double *dataB;
@@ -133,11 +132,11 @@ int main(int argc, char **argv){
 	}
       }
     }
-    printf("sending result from %d \n",myid);
     mtype = FROM_WORKER;
     MPI_Send(&offset, 1, MPI_INT, MASTER, mtype, MPI_COMM_WORLD);
     MPI_Send(&rows, 1, MPI_INT, MASTER, mtype, MPI_COMM_WORLD);
     MPI_Send(&(C[0][0]), rows*NCB, MPI_DOUBLE, MASTER, mtype, MPI_COMM_WORLD);
+    printf("sent result from %d \n",myid);
   }  
   MPI_Finalize();
   return(0);
