@@ -1,0 +1,12 @@
+#adorit,
+#salloc -N 2 --exclusive --tasks-per-node=20 --cpus-per-task=1 -t 5:00
+#1 node for nprocs <= 16, 2 nodes for nprocs=32, and 4 nodes (nonexclusive) for nprocs=64
+#problem size is 1000 1000 1000
+#nprocs runtime
+2 5.652406
+4 2.055254
+8 0.985539
+16 0.495439
+20 0.408317
+32 0.824928
+
