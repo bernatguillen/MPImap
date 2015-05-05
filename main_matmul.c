@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include "mpi.h"
 #include <time.h>
-
+#include <assert.h>
 #define MASTER 0
 #define FROM_MASTER 1
 #define FROM_WORKER 2
@@ -19,9 +19,10 @@ int initializeMatrix(double **M, int NR,int NC){
 }
 
 int main(int argc, char **argv){
-  int nprocs, myid, nworkers, source, dest, mtype, averow, extra, offset, i,j, k, rc;
+  int nprocs, myid, nworkers, source, dest, mtype, averow, extra, i,j, k, rc;
   int NRA,NCA,NCB;
-  int rows; 
+  int rows, offset; 
+  int *rows_m, *offset_m;
   MPI_Status status;
   MPI_Init(&argc,&argv);
   MPI_Errhandler_set(MPI_COMM_WORLD, MPI_ERRORS_RETURN); //Does not immediately abort
@@ -70,23 +71,29 @@ int main(int argc, char **argv){
     MPI_Bcast(&(B[0][0]), NCA*NCB, MPI_DOUBLE, 0, MPI_COMM_WORLD); //Broadcast
     averow = NRA/nworkers;
     extra = NRA%nworkers;
-    offset = 0;
+    offset_m = (int *) malloc(sizeof(int)* nprocs);
+    rows_m = (int *) malloc(sizeof(int)* nprocs);
+    offset_m[1] = 0; 
+    rows_m[0] = 0;
     mtype = FROM_MASTER;
     for(dest = 1; dest<nprocs; ++dest){
-      rows = (dest <= extra) ? averow+1 : averow;      
-      MPI_Isend(&offset, 1, MPI_INT, dest, mtype, MPI_COMM_WORLD,ireq + dest-1);
-      MPI_Isend(&rows, 1, MPI_INT, dest, mtype, MPI_COMM_WORLD, ireq + nworkers + dest-1);
-      MPI_Isend(&A[offset][0], rows*NCA, MPI_DOUBLE, dest, mtype, MPI_COMM_WORLD, ireq + 2*nworkers + dest - 1);
-      offset += rows;
+      offset_m[i] = offset_m[i-1] + rows_m[i-1];
+      rows_m[i] = (dest <= extra) ? averow+1 : averow;      
+      MPI_Isend(&offset_m[i], 1, MPI_INT, dest, mtype, MPI_COMM_WORLD,ireq + dest-1);
+      MPI_Isend(&rows_m[i], 1, MPI_INT, dest, mtype, MPI_COMM_WORLD, ireq + nworkers + dest-1);
+      MPI_Isend(&A[offset_m[i]][0], rows_m[i]*NCA, MPI_DOUBLE, dest, mtype, MPI_COMM_WORLD, ireq + 2*nworkers + dest - 1);
+      printf("master sent to %d rows_m: %d offset_m: %d\n",dest,rows_m[i],offset_m[i]);
     }
-    MPI_Waitall(3*nworkers, ireq, &stat); //kyle: do we need to wait for the messages to complete before posting the recieves?
+    //    MPI_Waitall(3*nworkers, ireq, &stat); //kyle: do we need to wait for the messages to complete before posting the recieves?
     mtype = FROM_WORKER;
     for(source = 1; source < nprocs; ++source){
       MPI_Recv(&offset, 1, MPI_INT, source, mtype, MPI_COMM_WORLD, &stat);
       MPI_Recv(&rows, 1, MPI_INT, source, mtype, MPI_COMM_WORLD, &stat);
-      //kyle edit: shouldnt this be rows*NCB?
-      //      MPI_Recv(&C[offset][0], rows*NCA, MPI_DOUBLE, source, mtype, MPI_COMM_WORLD, &stat);
       MPI_Recv(&C[offset][0], rows*NCB, MPI_DOUBLE, source, mtype, MPI_COMM_WORLD, &stat);
+      printf("master recv from %d rows: %d offset: %d\n",source,rows,offset);
+      /* Ensure that we receive the same amount of info and positions as MASTER sent */
+      assert(rows == rows_m[source]);
+      assert(offset == offset_m[source]);
     }
     time_f = MPI_Wtime();
     printf("computation took %lf seconds \n",time_f-time_s);
@@ -101,8 +108,8 @@ int main(int argc, char **argv){
       B[i] = &(dataB[NCB*i]);
     }  
 
-    MPI_Bcast(dataB, NCA*NCB, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-    //Synchronous receive (?)
+    MPI_Bcast(&(B[0][0]), NCA*NCB, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    printf("broadcasting to %d \n",myid);
     mtype = FROM_MASTER;
     MPI_Recv(&offset, 1, MPI_INT, MASTER, mtype, MPI_COMM_WORLD, &stat);
     MPI_Recv(&rows, 1, MPI_INT, MASTER, mtype, MPI_COMM_WORLD, &stat);
@@ -112,6 +119,7 @@ int main(int argc, char **argv){
       A[i] = &(dataA[NCA*i]);
     }
     MPI_Recv(&(A[0][0]), rows*NCA, MPI_DOUBLE, MASTER, mtype, MPI_COMM_WORLD, &stat); 
+    printf("recv from %d \n",myid);
     double **C = (double **) malloc(rows*sizeof(double *));
     double *dataC = (double *) malloc(sizeof(double)*NCB*rows); 
     for(i = 0; i<rows; ++i){
@@ -125,6 +133,7 @@ int main(int argc, char **argv){
 	}
       }
     }
+    printf("sending result from %d \n",myid);
     mtype = FROM_WORKER;
     MPI_Send(&offset, 1, MPI_INT, MASTER, mtype, MPI_COMM_WORLD);
     MPI_Send(&rows, 1, MPI_INT, MASTER, mtype, MPI_COMM_WORLD);
