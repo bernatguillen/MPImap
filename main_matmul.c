@@ -73,7 +73,7 @@ int main(int argc, char **argv){
     extra = NRA%nworkers;
     offset_m = (int *) malloc(sizeof(int)* nprocs);
     rows_m = (int *) malloc(sizeof(int)* nprocs);
-    offset_m[1] = 0; 
+    offset_m[0] = 0; 
     rows_m[0] = 0;
     mtype = FROM_MASTER;
     for(dest = 1; dest<nprocs; ++dest){
@@ -82,14 +82,12 @@ int main(int argc, char **argv){
       MPI_Send(&offset_m[dest], 1, MPI_INT, dest, mtype, MPI_COMM_WORLD);
       MPI_Send(&rows_m[dest], 1, MPI_INT, dest, mtype, MPI_COMM_WORLD);
       MPI_Send(&A[offset_m[dest]][0], rows_m[dest]*NCA, MPI_DOUBLE, dest, mtype, MPI_COMM_WORLD);
-      printf("master sent to %d rows_m: %d offset_m: %d\n",dest,rows_m[dest],offset_m[dest]);
     }
     mtype = FROM_WORKER;
     for(source = 1; source < nprocs; ++source){
       MPI_Recv(&offset, 1, MPI_INT, source, mtype, MPI_COMM_WORLD, &stat);
       MPI_Recv(&rows, 1, MPI_INT, source, mtype, MPI_COMM_WORLD, &stat);
       MPI_Recv(&C[offset][0], rows*NCB, MPI_DOUBLE, source, mtype, MPI_COMM_WORLD, &stat);
-      printf("master recv from %d rows: %d offset: %d\n",source,rows,offset);
       /* Ensure that we receive the same amount of info and positions as MASTER sent */
       assert(rows == rows_m[source]);
       assert(offset == offset_m[source]);
@@ -108,17 +106,15 @@ int main(int argc, char **argv){
     }  
 
     MPI_Bcast(&(B[0][0]), NCA*NCB, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-    printf("broadcasting to %d \n",myid);
     mtype = FROM_MASTER;
     MPI_Recv(&offset, 1, MPI_INT, MASTER, mtype, MPI_COMM_WORLD, &stat);
     MPI_Recv(&rows, 1, MPI_INT, MASTER, mtype, MPI_COMM_WORLD, &stat);
     double **A = (double **) malloc(rows*sizeof(double *));
     double *dataA = (double *) malloc(sizeof(double)*NCA*rows); 
-     for(i = 0; i<rows; ++i){
+    for(i = 0; i<rows; ++i){
       A[i] = &(dataA[NCA*i]);
     }
     MPI_Recv(&(A[0][0]), rows*NCA, MPI_DOUBLE, MASTER, mtype, MPI_COMM_WORLD, &stat); 
-    printf("recv from %d \n",myid);
     double **C = (double **) malloc(rows*sizeof(double *));
     double *dataC = (double *) malloc(sizeof(double)*NCB*rows); 
     for(i = 0; i<rows; ++i){
@@ -136,7 +132,6 @@ int main(int argc, char **argv){
     MPI_Send(&offset, 1, MPI_INT, MASTER, mtype, MPI_COMM_WORLD);
     MPI_Send(&rows, 1, MPI_INT, MASTER, mtype, MPI_COMM_WORLD);
     MPI_Send(&(C[0][0]), rows*NCB, MPI_DOUBLE, MASTER, mtype, MPI_COMM_WORLD);
-    printf("sent result from %d \n",myid);
   }  
   MPI_Finalize();
   return(0);
