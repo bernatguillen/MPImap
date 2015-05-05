@@ -77,12 +77,12 @@ int main(int argc, char **argv){
     rows_m[0] = 0;
     mtype = FROM_MASTER;
     for(dest = 1; dest<nprocs; ++dest){
-      offset_m[i] = offset_m[i-1] + rows_m[i-1];
-      rows_m[i] = (dest <= extra) ? averow+1 : averow;      
-      MPI_Isend(&offset_m[i], 1, MPI_INT, dest, mtype, MPI_COMM_WORLD,ireq + dest-1);
-      MPI_Isend(&rows_m[i], 1, MPI_INT, dest, mtype, MPI_COMM_WORLD, ireq + nworkers + dest-1);
-      MPI_Isend(&A[offset_m[i]][0], rows_m[i]*NCA, MPI_DOUBLE, dest, mtype, MPI_COMM_WORLD, ireq + 2*nworkers + dest - 1);
-      printf("master sent to %d rows_m: %d offset_m: %d\n",dest,rows_m[i],offset_m[i]);
+      offset_m[dest] = offset_m[dest-1] + rows_m[dest-1];
+      rows_m[dest] = (dest <= extra) ? averow+1 : averow;      
+      MPI_Isend(&offset_m[dest], 1, MPI_INT, dest, mtype, MPI_COMM_WORLD,ireq + dest-1);
+      MPI_Isend(&rows_m[dest], 1, MPI_INT, dest, mtype, MPI_COMM_WORLD, ireq + nworkers + dest-1);
+      MPI_Isend(&A[offset_m[dest]][0], rows_m[dest]*NCA, MPI_DOUBLE, dest, mtype, MPI_COMM_WORLD, ireq + 2*nworkers + dest - 1);
+      printf("master sent to %d rows_m: %d offset_m: %d\n",dest,rows_m[dest],offset_m[dest]);
     }
     //    MPI_Waitall(3*nworkers, ireq, &stat); //kyle: do we need to wait for the messages to complete before posting the recieves?
     mtype = FROM_WORKER;
