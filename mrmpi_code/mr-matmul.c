@@ -43,6 +43,7 @@ Syntax: NRA NCA NCB
 void map(int itask, void *kv, void *ptr);
 int partition(char *key, int keybytes);
 void reduce(char *key, int keybytes,char *multivalue, int nvalues, int *valuebytes, void *kv, void *ptr);
+int interleave_blocks(char *key1, int len1, char *key2, int len2);
 
 int initializeMatrix(double **M, int NR,int NC){
   time_t t;
@@ -58,6 +59,8 @@ int initializeMatrix(double **M, int NR,int NC){
 typedef struct {
   double **M1,**M2;
   int ntasks;
+  int extra1; //persistent variables for reducers
+  int extra2;
 } Matrices; 
 
 /* ---------------------------------------------------------------------- */
@@ -67,17 +70,11 @@ int main(int argc, char **argv)
   double tstart,tstop;
   Matrices input;
   int nelements_in,nelements_out;
-
+  int i;
   MPI_Init(&argc,&argv);
   MPI_Comm_rank(MPI_COMM_WORLD,&me);
   MPI_Comm_size(MPI_COMM_WORLD,&nprocs);
 
-  /*  if(nprocs < 2 || argc != 4){
-    if (me == MASTER) 
-      printf("usage: main_matmul NRA NCA NCB \n NRA: number of rows in A \n NCA: number of columns in A \n NCB: number of rows in B \n (NRB == NCA) \n");
-    MPI_Abort(MPI_COMM_WORLD, rc);
-    exit(1);
-    } */
   /* Dynamically allocate matrices */
   double **A,**B,**C;
   double *dataA,*dataB,*dataC;
@@ -99,7 +96,7 @@ int main(int argc, char **argv)
   }
   initializeMatrix(A, NRA, NCA);
   initializeMatrix(B, NCA, NCB);
-  //double check struct notation
+
   input.M1 = A; 
   input.M2 = B;
   input.ntasks = nprocs;
@@ -122,11 +119,55 @@ int main(int argc, char **argv)
   //use map task rank to partition 
   //map returns number of KV pairs
   nelements_in = MR_map(mr,nprocs,&map,(void *) &input);
+  // need to sort locally to interleave A,B blocks
+  /*  Intermediate keys (ib, jb, kb, m) sort in increasing order first by ib, then by jb, then by kb, then by m. */
+  MR_sort_keys(mr,&interleave_blocks);
   /* Redistribute all the block KVs to consistent processors */
   /* Turn the KV into a KVM since they all have the same key */
-  MR_collate(mr, &partition); //both aggregates and converts
-  nelements_out = MR_reduce(mr,&reduce,NULL);
+  MR_collate(mr, &partition); //both aggregates and converts to KVM
+
+  Matrices blocks; 
+  double **Ablock,**Cblock;
+  double *dataAblock,*dataCblock;
+  //Temporarily store blocks
+  Ablock = (double **) malloc(sizeof(double *)*IB);
+  dataAblock = (double *) malloc(sizeof(double)*IB*KB);
+  Cblock = (double **) malloc(sizeof(double *)*IB);
+  dataCblock = (double *) malloc(sizeof(double)*IB*JB);
+  for(i=0; i<IB; i++){
+    Ablock[i] = &(dataAblock[KB*i]);
+  }
+  for(i=0; i<IB; i++){
+    Cblock[i] = &(dataCblock[JB*i]);
+  }
+  blocks.M1 = Ablock;
+  blocks.M2 = Cblock;
+  // exploit the fact that the block values are ordered
+  blocks.ntasks = -1; 
+  blocks.extra1 = -1; 
+  blocks.extra2 = -1; 
+
+  nelements_out = MR_reduce(mr,&reduce,&blocks);
   printf("nelements_in = %d \n", (int) nelements_in); 
+  /*one block still needs to be emitted */
+  void *kv = MR_get_kv(mr);
+  int ibase,jbase,j;
+  int new_key[2];
+  printf("sib %d\n",blocks.ntasks);
+  if (blocks.ntasks != -1){ //Emit the last completed C block
+      ibase = (blocks.ntasks)*IB;
+      jbase =(blocks.extra1)*JB;
+      for (i=0; i<IB; i++){
+	for (j=0; j<JB; j++){
+	  new_key[0] = ibase+i; 
+	  new_key[1] = jbase+j;
+	  MR_kv_add(kv,(char *)&new_key,2*sizeof(int),(char *) &(blocks.M2[i][j]),sizeof(double));
+	}
+      }
+    } 
+  /*Collect result on MASTER */
+  nelements_out = MR_gather(mr,1);
+  printf("nelements_out = %d \n", (int) nelements_out);
   
   //unclear if we are getting the correct net total of KV pairs
   // for 100x100 matrices with 10 row, 10 column blocks
@@ -136,7 +177,7 @@ int main(int argc, char **argv)
 
   //debugging KVs
   //void MR_print(void *MRptr, int proc, int nstride, int kflag, int vflag ); nproc <0 implies all print
-  MR_print(mr,0,1,1,4); //wont print full key_array, value_array
+  //  MR_print(mr,0,1,1,4); //wont print full key_array, value_array
 
   MR_destroy(mr);
 
@@ -210,24 +251,16 @@ void reduce(char *key, int keybytes,char *multivalue, int nvalues, int *valuebyt
   int ib,jb,kb,matrix_indicator;
   int i,j;
 
+  /*Reducer persistent variables */
+  Matrices *input = (Matrices *) ptr; 
   double **A,**C;
-  double *dataA,*dataC;
-  //Temporarily store blocks
-  A = (double **) malloc(sizeof(double *)*IB);
-  dataA = (double *) malloc(sizeof(double)*IB*KB);
-  C = (double **) malloc(sizeof(double *)*IB);
-  dataC = (double *) malloc(sizeof(double)*IB*JB);
-  for(i=0; i<IB; i++){
-    A[i] = &(dataA[KB*i]);
-  }
-  for(i=0; i<IB; i++){
-    C[i] = &(dataC[JB*i]);
-  }
-  // exploit the fact that the block values are ordered
-  int sib = -1;
-  int sjb = -1;
-  int skb = -1;
-  
+  A = input->M1; 
+  C = input->M2; 
+  int *sib,*sjb,*skb;
+  sib = &(input->ntasks);
+  sjb = &(input->extra1);
+  skb = &(input->extra2);
+
   int jbase,ibase;
   ib = key_array[0];
   jb = key_array[1];
@@ -235,35 +268,39 @@ void reduce(char *key, int keybytes,char *multivalue, int nvalues, int *valuebyt
   matrix_indicator = key_array[3];
 
   int row,col;
-
-  if ((ib != sib) || (jb != sjb)){
-    if (sib != -1){ //Emit the last completed C block
-      ibase = sib*IB;
-      jbase =sjb*JB;
+  //  printf("ib: %d jb: %d kb: %d mat: %d\n",ib,jb,kb,matrix_indicator);
+  int new_key[2];
+  if ((ib != *sib) || (jb != *sjb)){
+    //this is a problem because the reducer routine doesnt constantly stream new KMVs-- the memory for C and A are not persistent. Could pass as ptr...
+    if (*sib != -1){ //Emit the last completed C block
+      ibase = (*sib)*IB;
+      jbase =(*sjb)*JB;
       for (i=0; i<IB; i++){
 	for (j=0; j<JB; j++){
-	  //	  v = C[i][j];
 	  //emit C key
+	  new_key[0] = ibase+i; 
+	  new_key[1] = jbase+j;
+	  MR_kv_add(kv,(char *)&new_key,2*sizeof(int),(char *) &C[i][j],sizeof(double));
 	}
       }
     }
-    sib = ib;
-    sjb =jb;
-    skb = -1;
+    *sib = ib;
+    *sjb = jb;
+    *skb = -1;
     /* Reset matrix C */
     for (i=0; i<IB; i++){
       for (j=0; j<JB; j++){
 	C[i][j] = 0.0;
       }
-    }     
-  }			
+    }
+  }     			
   if (!matrix_indicator){ //A matrix
-    skb = kb;
+    *skb = kb;
     /* Reset matrix A */
     for (i=0; i<IB; i++){
-      for (j=0; j<KB; j++){
-	A[i][j] = 0.0;
-      }
+	for (j=0; j<KB; j++){
+	  A[i][j] = 0.0;
+	}
     }
     //since this is a KMV structure, we can loop over the values
     for (i=0; i<nvalues; i++){
@@ -273,12 +310,12 @@ void reduce(char *key, int keybytes,char *multivalue, int nvalues, int *valuebyt
     }
   }
   else {
-    if( kb != skb) return;
+    if( kb != *skb) return;
     for (i=0; i<nvalues; i++){
       row = (int) value_array[3*i];
       col = (int) value_array[3*i +1];
       for (j=0; j<IB; j++)
-	C[j][col] = A[j][row]*value_array[3*i+2];
+	C[j][col] += A[j][row]*value_array[3*i+2];
     }
   }
 } 
@@ -289,7 +326,45 @@ int partition(char *key, int keybytes){
   ib = key_array[0];
   jb = key_array[1];
   kb = key_array[2];
-
-  iproc = ((ib*JB + jb)*KB + kb); //mr-mpi should automatically mod p this
+  iproc = (ib*JB + jb);//mr-mpi should automatically mod p this
   return(iproc);
+}
+
+int interleave_blocks(char *key1, int len1, char *key2, int len2){
+  int *key_array1 = (int *) key1;
+  int *key_array2 = (int *) key2;
+
+  if (key_array1[0] > key_array2[0]){
+    return(1);
+  }
+  else if (key_array1[0] < key_array2[0]){
+    return(-1);
+  }
+  else{
+      if (key_array1[1] > key_array2[1]){
+	return(1);
+      }
+      else if (key_array1[1] < key_array2[1]){
+	return(-1);
+      }
+      else{
+	  if (key_array1[2] > key_array2[2]){
+	    return(1);
+	  }
+	  else if (key_array1[2] < key_array2[2]){
+	    return(-1);
+	  }
+	  else{
+	      if (key_array1[3] > key_array2[3]){
+		return(1);
+	      }
+	      else if (key_array1[3] < key_array2[3]){
+		return(-1);
+	      }
+	      else{
+		return(0);
+	      }
+	  }
+      }
+  }
 }
