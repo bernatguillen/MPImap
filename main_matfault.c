@@ -19,6 +19,25 @@ int initializeMatrix(double **M, int NR,int NC){
   return(0);
 }
 
+int reassigndata(int *working, int *waiting, int dest0, int nprocs, double **A, int *offset_m, int *rows_m, int NRA, int NCA){
+  int mtype, averow, extra, nworkers;
+  nworkers = nprocs - 1;
+  mtype = FROM_MASTER;
+  averow = NRA/nworkers;
+  extra = NRA%nworkers;
+  dest = 0;
+  di = 1;
+  while(dest == 0){
+    if(di!=dest0 && working[di]==MPI_SUCCESS && waiting[di] == 0){
+      dest = di;
+    }
+    di = (di+1 < nworkers ? di+1 : 1);
+    if(di == 1) return -1; //error, no node available
+  }
+
+}
+
+
 int senddata(int *working, int dest, int nprocs, double **A, int *offset_m, int *rows_m, int NRA, int NCA){
   int mtype, averow, extra,nworkers;
   nworkers = nprocs - 1;
@@ -147,33 +166,27 @@ int main(int argc, char **argv){
     count = 0;
     int rdy = 1;
     int go = 1;
-    int wait = 0;
     while(count < nworkers){
-      wait = 0;
       if(working[source] == MPI_SUCCESS && MPI_Wtime() - time_w[source] >= waiting[source]){
-	MPI_Isend(&rdy,1,MPI_INT,source,FROM_MASTER,MPI_COMM_WORLD, ireq);
+	if(waiting[source] == 0){
+	  MPI_Isend(&rdy,1,MPI_INT,source,FROM_MASTER,MPI_COMM_WORLD, ireq);
+	}
 	MPI_Test(ireq,&flags[source],&stat);
 	if(flags[source]){
-	  MPI_Isend(&go,1,MPI_INT,source,FROM_MASTER,MPI_COMM_WORLD, ireq);
-	  MPI_Test(ireq,&flags[source],&stat);
-	  if(flags[source]){
-	    MPI_Recv(&offset, 1, MPI_INT, source, mtype, MPI_COMM_WORLD, &stat);
-	    MPI_Recv(&rows, 1, MPI_INT, source, mtype, MPI_COMM_WORLD, &stat);
-	    MPI_Recv(&C[offset][0], rows*NCB, MPI_DOUBLE, source, mtype, MPI_COMM_WORLD, &stat);
-	    /* Ensure that we receive the same amount of info and positions as MASTER sent */
-	    assert(rows == rows_m[source]);
-	    assert(offset == offset_m[source]);
-	    ++count;
-	    waiting[source] = 0;
-	  }else{
-	    wait = 1;
-	  }
+	  MPI_Send(&go,1,MPI_INT,source,FROM_MASTER,MPI_COMM_WORLD);
+	  MPI_Recv(&offset, 1, MPI_INT, source, mtype, MPI_COMM_WORLD, &stat);
+	  MPI_Recv(&rows, 1, MPI_INT, source, mtype, MPI_COMM_WORLD, &stat);
+	  MPI_Recv(&C[offset][0], rows*NCB, MPI_DOUBLE, source, mtype, MPI_COMM_WORLD, &stat);
+	  /* Ensure that we receive the same amount of info and positions as MASTER sent */
+	  assert(rows == rows_m[source]);
+	  assert(offset == offset_m[source]);
+	  ++count;
+	  waiting[source] = 0;
 	}else{
-	  wait = 1;
-	}
-	if(wait){
 	  time_w[source] = MPI_Wtime();
 	  ++waiting[source];
+	  if(waiting[source] == 9){
+	    
 	}
       }
     }
