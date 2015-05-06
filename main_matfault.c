@@ -147,7 +147,9 @@ int main(int argc, char **argv){
     count = 0;
     int rdy = 1;
     int go = 1;
+    int wait = 0;
     while(count < nworkers){
+      wait = 0;
       if(working[source] == MPI_SUCCESS && MPI_Wtime() - time_w[source] >= waiting[source]){
 	MPI_Isend(&rdy,1,MPI_INT,source,FROM_MASTER,MPI_COMM_WORLD, ireq);
 	MPI_Test(ireq,&flags[source],&stat);
@@ -163,8 +165,13 @@ int main(int argc, char **argv){
 	    assert(offset == offset_m[source]);
 	    ++count;
 	    waiting[source] = 0;
+	  }else{
+	    wait = 1;
 	  }
 	}else{
+	  wait = 1;
+	}
+	if(wait){
 	  time_w[source] = MPI_Wtime();
 	  ++waiting[source];
 	}
