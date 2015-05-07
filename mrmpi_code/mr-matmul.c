@@ -47,9 +47,12 @@ int interleave_blocks(char *key1, int len1, char *key2, int len2);
 
 int initializeMatrix(double **M, int NR,int NC){
   time_t t;
+  int i; 
+  int j;
   srand((unsigned) time(&t));
-  for(int i = 0; i<NR; ++i){
-    for(int j = 0; j<NC; ++j){
+
+  for(i = 0; i<NR; ++i){
+    for(j = 0; j<NC; ++j){
       M[i][j] = rand();
     }
   }
@@ -85,13 +88,13 @@ int main(int argc, char **argv)
   dataB = (double *) malloc(sizeof(double)*NCA*NCB);
   C = (double **) malloc(sizeof(double *)*NRA);
   dataC = (double *) malloc(sizeof(double)*NRA*NCB);
-  for(int i=0; i<NRA; i++){
+  for(i=0; i<NRA; i++){
     A[i] = &(dataA[NCA*i]);
   }
-  for(int i=0; i<NCA; i++){
+  for(i=0; i<NCA; i++){
     B[i] = &(dataB[NCB*i]);
   }
-  for(int i=0; i<NRA; i++){
+  for(i=0; i<NRA; i++){
     C[i] = &(dataC[NCB*i]);
   }
   initializeMatrix(A, NRA, NCA);
