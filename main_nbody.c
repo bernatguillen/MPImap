@@ -4,7 +4,7 @@
 #include <math.h>
 #include "mpi.h"
 
-#define NPARTICLES 1000
+#define NPARTICLES 5000
 #define NT 100
 #define DT 0.1
 #define NEWTON 6.67E-11
@@ -20,6 +20,8 @@ typedef struct{
   double py;
   double pvx;
   double pvy;
+  double phalf_vx;
+  double phalf_vy;
 } Particle; 
 
 void main(int argc, char **argv){
@@ -45,13 +47,30 @@ void main(int argc, char **argv){
   for (i=0; i<nlocal; i++){
     particles[i].pid = myid*nlocal+i; 
     particles[i].pm = 1.0;
-    particles[i].px = rand();
-    particles[i].py = rand();
-    particles[i].pvx = rand()/50;
-    particles[i].pvy = rand()/50;
+    particles[i].px = rand()/(double) RAND_MAX;
+    particles[i].py = rand()/(double) RAND_MAX;
+    /*sample direction (negative or positive boolean) */
+    if( rand() % 2){
+	particles[i].pvx = 0.01*rand()/(double) RAND_MAX;
+    }
+    else {
+	particles[i].pvx = -0.01*rand()/(double) RAND_MAX;
+    }
+    if( rand() % 2){
+	particles[i].pvy = 0.01*rand()/(double) RAND_MAX;
+    }
+    else {
+	particles[i].pvy = -0.01*rand()/(double) RAND_MAX;
+    }
+    //    particles[i].phalf_vx = 0.01* rand()/(double) RAND_MAX;
+    //particles[i].phalf_vy = 0.01*rand()/(double) RAND_MAX;
+    //       printf("pid: %d x: %lf y: %lf vx: %lf vy: %lf vhalfx: %lf vhalfy: %lf\n",particles[i].pid,particles[i].px,particles[i].py,particles[i].pvx,particles[i].pvy,particles[i].phalf_vx,particles[i].phalf_vy);
   }
   double *forces; 
-  forces = (double *) malloc(nlocal*sizeof(double));
+  forces = (double *) malloc(2*nlocal*sizeof(double));
+
+  /* Need initial V at two separate time levels for leap frog */
+
   /* Message arrays: 1 identical outbound, nprocs-1 inbound */
   //manually pack the array of particle messages with stride 3
   double *particle_out = (double *) malloc(3*nlocal*sizeof(double)); 
@@ -63,10 +82,11 @@ void main(int argc, char **argv){
   MPI_Status stat; 
   /* Main timestepping loop */
   double time;
+  double norm_squared,unit_x,unit_y;
   for (i=0; i<NT; i++){
     time = i*DT; 
     //zero out force array
-    for (j=0; j<nlocal; j++)
+    for (j=0; j<2*nlocal; j++)
       forces[j]=0.0;
     /*Send particle positions, mass info to every other process */
     for (j=0; j<nlocal; j++){
@@ -86,8 +106,14 @@ void main(int argc, char **argv){
     /*Compute net forces among own particles */
     for (j=0; j<nlocal; j++){
       for (k=0; k<nlocal; k++){
-	if (k!=j)
-	  forces[k] += (NEWTON*particles[k].pm*particles[j].pm)/(pow(particles[k].px - particles[j].px,2) + pow(particles[k].py - particles[j].py,2) + pow(EPSILON,2));
+	if (k!=j){
+	  /*Regularize pairwise distance */
+	  norm_squared= pow(particles[k].px - particles[j].px,2) + pow(particles[k].py - particles[j].py,2)+ pow(EPSILON,2);
+	  unit_x = (particles[k].px - particles[j].px)/sqrt(norm_squared); 
+	  unit_y = (particles[k].py - particles[j].py)/sqrt(norm_squared); 
+	  forces[2*k] += (NEWTON*particles[k].pm*particles[j].pm*unit_x)/norm_squared;
+	  forces[2*k+1] += (NEWTON*particles[k].pm*particles[j].pm*unit_y)/norm_squared;
+	}
       }
     }
     /* Wait for recvs, update force for everyone of my particles */
@@ -97,25 +123,64 @@ void main(int argc, char **argv){
 	for (k=0; k<nlocal; k++){
 	  for (l=0; l<nlocal; l++){
 	    //remember, particle_in is not Particle struct, but doubles
-	    forces[k] += (NEWTON*particles[k].pm*particle_in[j][l*3])/(pow(particles[k].px - particle_in[j][l*3+1],2) + pow(particles[k].py - particle_in[j][l*3+2],2) + pow(EPSILON,2));
+	    norm_squared= pow(particles[k].px - particle_in[j][l*3+1],2) + pow(particles[k].py - particle_in[j][l*3+2],2)+ pow(EPSILON,2);
+	    unit_x = (particles[k].px - particle_in[j][l*3+1])/sqrt(norm_squared); 
+	    unit_y = (particles[k].py - particle_in[j][l*3+2])/sqrt(norm_squared); 
+	    forces[2*k] += (NEWTON*particles[k].pm*particle_in[j][l*3]*unit_x)/norm_squared;
+	    forces[2*k+1] += (NEWTON*particles[k].pm*particle_in[j][l*3]*unit_y)/norm_squared;
 	  }
 	}
       }
     }
 
     /*Use leapfrog scheme to update local velocities */
-
-    /*Regularize pairwise distance */
-
-    /*Eliminate particles that have left the domain. */
+    if (i==0){ /* Seed vhalf at first time level */
+      //should use higher order, but i dont want to compute multiple force timesteps
+      for (j=0; j<nlocal; j++){
+	particles[j].phalf_vx = particles[j].pvx + forces[2*j]*DT/(particles[j].pm*2);
+	particles[j].phalf_vy = particles[j].pvy + forces[2*j+1]*DT/(particles[j].pm*2);
+      }
+    }
+    else {
+      for (j=0; j<nlocal; j++){
+	particles[j].pvx = particles[j].phalf_vx;
+	particles[j].pvy = particles[j].phalf_vy;
+	particles[j].phalf_vx = particles[j].pvx + forces[2*j]*DT/particles[j].pm;
+	particles[j].phalf_vy = particles[j].pvy + forces[2*j+1]*DT/particles[j].pm;
+      }
+    }
+    for (j=0; j<nlocal; j++){
+      particles[j].px = particles[j].px + particles[j].phalf_vx*DT;
+      particles[j].py = particles[j].py + particles[j].phalf_vy*DT;
+      /*Eliminate particles that have left the domain. (for now, just reseed position and velocity)*/
+      if (particles[j].px  <  0.0 || particles[j].px > lx || particles[j].py > ly || particles[j].px < 0.0){
+	//        printf("reseeding...\n");
+	//	printf("pid: %d x: %lf y: %lf vx: %lf vy: %lf vhalfx: %lf vhalfy: %lf\n",particles[j].pid,particles[j].px,particles[j].py,particles[j].pvx,particles[j].pvy,particles[j].phalf_vx,particles[j].phalf_vy);
+	particles[j].px = rand()/(double) RAND_MAX;
+	particles[j].py = rand()/(double) RAND_MAX;
+	/*sample direction (negative or positive boolean) */
+	if( rand() % 2){
+	  particles[j].pvx = 0.01*rand()/(double) RAND_MAX;
+	}
+	else {
+	  particles[j].pvx = -0.01*rand()/(double) RAND_MAX;
+	}
+	if( rand() % 2){
+	  particles[j].pvy = 0.01*rand()/(double) RAND_MAX;
+	}
+	else {
+	  particles[j].pvy = -0.01*rand()/(double) RAND_MAX;
+	}
+	particles[j].phalf_vx = particles[j].pvx;
+	particles[j].phalf_vy = particles[j].pvy;
+      }
+    }
     MPI_Barrier(MPI_COMM_WORLD);
   }
-  MPI_Barrier(MPI_COMM_WORLD);
   tstop = MPI_Wtime();
   if (myid == 0) {
     printf("Time = %g (secs)\n",tstop-tstart);
   }
-
 
   MPI_Finalize();
   return;
