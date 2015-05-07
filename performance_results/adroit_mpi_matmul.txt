@@ -2,11 +2,24 @@
 #salloc -N 2 --exclusive --tasks-per-node=20 --cpus-per-task=1 -t 5:00
 #1 node for nprocs <= 16, 2 nodes for nprocs=32, and 4 nodes (nonexclusive) for nprocs=64
 #problem size is 1000 1000 1000
-#nprocs runtime
-2 5.652406
-4 2.055254
-8 0.985539
-16 0.495439
-20 0.408317
-32 0.824928
+#nprocs mpi_run mrmpi
+2 5.652406 119.373
+4 2.055254 8.00888
+8 0.985539 2.48577
+16 0.495439 0.741911
+20 0.408317 0.590125
+32 0.824928 0.923441
 
+
+#cumulative highwater memory in mapreduce grows with nprocs
+nprocs=16 
+Cummulative hi-water mem = 1.43e+04 Mb any proc, 224 Gb all procs
+
+#MR-mpi operates on-core, in memory, but if you exceed the default mempage limit,
+#it will write scratch files. Still faster than virtual memory. 
+
+Initial KV size for 1000x1000 A,B with 100 blocks per row/col: 
+= (Keys + values +overhead)*number of elements*number of blocks that need each element
+= (3*8 + 4*4 +2*4 + alignment) * 200000*100 bytes
+
+= about 1 GB
