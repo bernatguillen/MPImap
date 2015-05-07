@@ -10,10 +10,13 @@ SYSLIB =
 
 # Targets
 
-all:    mr-matmul
+all:    mr-matmul mr-nbody
 
 mr-matmul:      mr-matmul.o $(USRLIB)
 	$(LINK) $(LINKFLAGS) mr-matmul.o $(USRLIB) $(SYSLIB) -o mr-matmul
+
+mr-nbody:	mr-nbody.o $(USRLIB)
+	$(LINK) $(LINKFLAGS) mr-nbody.o $(USRLIB) $(SYSLIB) -o mr-nbody
 
 clean:
 	rm *.o mr-matmul
