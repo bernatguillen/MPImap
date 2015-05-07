@@ -20,7 +20,8 @@ int initializeMatrix(double **M, int NR,int NC){
 }
 
 int reassigndata(int *working, int *waiting, int dest0, int nprocs, double **A, int *offset_m, int *rows_m, int NRA, int NCA){
-  int mtype, averow, extra, nworkers;
+  int mtype, averow, extra, nworkers, dest, di;
+  int go = 1;
   nworkers = nprocs - 1;
   mtype = FROM_MASTER;
   averow = NRA/nworkers;
@@ -34,7 +35,11 @@ int reassigndata(int *working, int *waiting, int dest0, int nprocs, double **A, 
     di = (di+1 < nworkers ? di+1 : 1);
     if(di == 1) return -1; //error, no node available
   }
-
+  MPI_Send(&go, 1, MPI_INT, dest, mtype, MPI_COMM_WORLD);
+  MPI_Send(&offset_m[dest0], 1, MPI_INT, dest, mtype, MPI_COMM_WORLD);
+  MPI_Send(&rows_m[dest0], 1, MPI_INT, dest, mtype, MPI_COMM_WORLD);
+  MPI_Send(&A[offset_m[dest0]][0], rows_m[dest]*NCA, MPI_DOUBLE, dest, mtype, MPI_COMM_WORLD);
+  return 1;
 }
 
 
@@ -49,8 +54,6 @@ int senddata(int *working, int dest, int nprocs, double **A, int *offset_m, int 
     rows_m[dest] += (dest <= extra) ? averow+1 : averow;      
     working[dest]=MPI_Send(&offset_m[dest], 1, MPI_INT, dest, mtype, MPI_COMM_WORLD);
     if(working[dest] != MPI_SUCCESS){
-      offset_m[dest+1] = offset_m[dest];
-      offset_m[dest] = -1;
       rows_m[dest+1] = rows_m[dest];
       rows_m[dest] = 0;
       return senddata(working, dest+1, nprocs, A, offset_m, rows_m, NCA, NRA);
@@ -80,14 +83,20 @@ int senddata(int *working, int dest, int nprocs, double **A, int *offset_m, int 
     rows_m[dest] += (dest <= extra) ? averow+1 : averow;      
     working[dest]=MPI_Send(&offset_m[dest], 1, MPI_INT, dest, mtype, MPI_COMM_WORLD);
     if(working[dest]!=MPI_SUCCESS){
+      offset_m[0] = offset_m[dest];
+      rows_m[0] = rows_m[dest];
       return -1;
     }else{
       working[dest]|=MPI_Send(&rows_m[dest], 1, MPI_INT, dest, mtype, MPI_COMM_WORLD);
       if(working[dest]!=MPI_SUCCESS){
+	offset_m[0] = offset_m[dest];
+	rows_m[0] = rows_m[dest];
 	return -1;
       }else{
 	working[dest]|=MPI_Send(&A[offset_m[dest]][0], rows_m[dest]*NCA, MPI_DOUBLE, dest, mtype, MPI_COMM_WORLD);
 	if(working[dest]!=MPI_SUCCESS){
+	  offset_m[0] = offset_m[dest];
+	  rows_m[0] = rows_m[dest];
 	  return -1;
 	}
       }
@@ -157,15 +166,31 @@ int main(int argc, char **argv){
       working[i] = MPI_SUCCESS;
       rows_m[i] = 0;
     }
-    senddata(working,1,nprocs,A,offset_m,rows_m,NRA,NCA);
+    if(senddata(working,1,nprocs,A,offset_m,rows_m,NRA,NCA) == -1){
+      //compute
+    }
     //senddata
     mtype = FROM_WORKER;
     int *flags;
     flags = (int *) malloc(sizeof(int)* nprocs);
-    source = 1;
-    count = 0;
+    int *waiting; 
+    waiting = (int *) malloc(sizeof(int) * nprocs);
+    double *time_w;
+    time_w = (double *) malloc(sizeof(double) * nprocs);
+    for(int i = 0; i<nprocs; ++i){
+      time_w[i] = 0.0;
+      waiting[i] = 0;
+    }
+    int source = 1;
+    int count = 0;
     int rdy = 1;
     int go = 1;
+    int stop = 0;
+    for(int i = 0; i<nworkers; ++i){
+      if(working[i+1] != MPI_SUCCESS){
+	++count;
+      }
+    }
     while(count < nworkers){
       if(working[source] == MPI_SUCCESS && MPI_Wtime() - time_w[source] >= waiting[source]){
 	if(waiting[source] == 0){
@@ -186,9 +211,12 @@ int main(int argc, char **argv){
 	  time_w[source] = MPI_Wtime();
 	  ++waiting[source];
 	  if(waiting[source] == 9){
-	    
+	    reassigndata(working,waiting,source,nprocs,A,offset_m,rows_m,NRA,NCA);
+	    MPI_Isend(&stop,1,MPI_INT,source,FROM_MASTER,MPI_COMM_WORLD,ireq);
+	  }
 	}
       }
+      source = source+1 < nprocs ? source+1:1;
     }
     time_f = MPI_Wtime();
     printf("computation took %lf seconds \n",time_f-time_s);
@@ -234,10 +262,54 @@ int main(int argc, char **argv){
 	}
       }
     }
+    free(A);
+    free(dataA);
     mtype = FROM_WORKER;
-    MPI_Send(&offset, 1, MPI_INT, MASTER, mtype, MPI_COMM_WORLD);
-    MPI_Send(&rows, 1, MPI_INT, MASTER, mtype, MPI_COMM_WORLD);
-    MPI_Send(&(C[0][0]), rows*NCB, MPI_DOUBLE, MASTER, mtype, MPI_COMM_WORLD);
+    int mess;
+    MPI_Recv(&mess,1,MPI_INT,MASTER,FROM_MASTER,MPI_COMM_WORLD,&stat);
+    MPI_Recv(&mess,1,MPI_INT,MASTER,FROM_MASTER,MPI_COMM_WORLD,&stat);
+    if(mess == 1){ 
+      MPI_Send(&offset, 1, MPI_INT, MASTER, mtype, MPI_COMM_WORLD);
+      MPI_Send(&rows, 1, MPI_INT, MASTER, mtype, MPI_COMM_WORLD);
+      MPI_Send(&(C[0][0]), rows*NCB, MPI_DOUBLE, MASTER, mtype, MPI_COMM_WORLD);
+    }else{
+      MPI_Finalize();
+    }
+    free(C);
+    free(dataC);
+    MPI_Recv(&mess,1,MPI_INT,MASTER,FROM_MASTER,MPI_COMM_WORLD,&stat);
+    if(mess == 1){
+      MPI_Recv(&offset, 1, MPI_INT, MASTER, mtype, MPI_COMM_WORLD, &stat);
+      MPI_Recv(&rows, 1, MPI_INT, MASTER, mtype, MPI_COMM_WORLD, &stat);
+      A = (double **) malloc(rows*sizeof(double *));
+      dataA = (double *) malloc(sizeof(double)*NCA*rows); 
+      for(i = 0; i<rows; ++i){
+	A[i] = &(dataA[NCA*i]);
+      }
+      MPI_Recv(&(A[0][0]), rows*NCA, MPI_DOUBLE, MASTER, mtype, MPI_COMM_WORLD, &stat); 
+      C = (double **) malloc(rows*sizeof(double *));
+      dataC = (double *) malloc(sizeof(double)*NCB*rows); 
+      for(i = 0; i<rows; ++i){
+	C[i] = &(dataC[NCB*i]);
+      }
+      for(k = 0; k<NCB; ++k){
+	for(i = 0; i<rows; ++i){
+	  C[i][k] = 0.0;
+	  for(j = 0; j<NCA; ++j){
+	    C[i][k] += A[i][j]*B[j][k];
+	  }
+	}
+      }
+      MPI_Recv(&mess,1,MPI_INT,MASTER,FROM_MASTER,MPI_COMM_WORLD,&stat);
+      MPI_Recv(&mess,1,MPI_INT,MASTER,FROM_MASTER,MPI_COMM_WORLD,&stat);
+      if(mess == 1){ 
+	MPI_Send(&offset, 1, MPI_INT, MASTER, mtype, MPI_COMM_WORLD);
+	MPI_Send(&rows, 1, MPI_INT, MASTER, mtype, MPI_COMM_WORLD);
+	MPI_Send(&(C[0][0]), rows*NCB, MPI_DOUBLE, MASTER, mtype, MPI_COMM_WORLD);
+      }else{
+	MPI_Finalize();
+      }
+    }
   }  
   MPI_Finalize();
   return(0);
