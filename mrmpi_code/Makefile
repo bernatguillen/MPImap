@@ -10,7 +10,7 @@ SYSLIB =
 
 # Targets
 
-all:    mr-matmul mr-nbody
+all:    mr-matmul mr-nbody mr-montecarlo
 
 mr-matmul:      mr-matmul.o $(USRLIB)
 	$(LINK) $(LINKFLAGS) mr-matmul.o $(USRLIB) $(SYSLIB) -o mr-matmul
@@ -18,8 +18,11 @@ mr-matmul:      mr-matmul.o $(USRLIB)
 mr-nbody:	mr-nbody.o $(USRLIB)
 	$(LINK) $(LINKFLAGS) mr-nbody.o $(USRLIB) $(SYSLIB) -o mr-nbody
 
+mr-montecarlo:	mr-montecarlo.o $(USRLIB)
+	$(LINK) $(LINKFLAGS) mr-montecarlo.o $(USRLIB) $(SYSLIB) -o mr-montecarlo
+
 clean:
-	rm *.o mr-matmul
+	rm *.o mr-matmul mr-nbody mr-montecarlo
 
 %.o:%.c
 	$(CC) $(CCFLAGS) -c $<
