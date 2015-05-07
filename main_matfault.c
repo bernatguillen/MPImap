@@ -218,17 +218,12 @@ int main(int argc, char **argv){
       }
       source = source+1 < nprocs ? source+1:1;
     }
+    for(int i = 1; i<nprocs;++i){
+      MPI_Isend(&stop,1,MPI_INT,i,FROM_MASTER,MPI_COMM_WORLD,ireq);
+    }
     time_f = MPI_Wtime();
     printf("computation took %lf seconds \n",time_f-time_s);
-    free(A);
-    free(B);
-    free(C);
-    free(dataA);
-    free(dataB);
-    free(dataC);
-    free(offset_m);
-    free(rows_m);
-    free(working);
+    MPI_Finalize();
   }else{ //Worker process
     double **B; 
     double *dataB;
@@ -309,8 +304,9 @@ int main(int argc, char **argv){
       }else{
 	MPI_Finalize();
       }
+    }else{
+      MPI_Finalize();
     }
   }  
-  MPI_Finalize();
   return(0);
 }
