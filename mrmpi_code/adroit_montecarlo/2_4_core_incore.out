@@ -1,0 +1,100 @@
+nelements_in = 100000000 
+nelements_out = 1 
+Map time (secs) = 2.921
+Map KV =   KV pairs:   5e+07 ave 5e+07 max 5e+07 min
+  Histogram:  2 0 0 0 0 0 0 0 0 0
+  Kdata (Mb): 190.735 ave 190.735 max 190.735 min
+  Histogram:  2 0 0 0 0 0 0 0 0 0
+  Vdata (Mb): 190.735 ave 190.735 max 190.735 min
+  Histogram:  2 0 0 0 0 0 0 0 0 0
+Compress time (secs) = 4.1338
+Compress KV =   KV pairs:   1 ave 1 max 1 min
+  Histogram:  2 0 0 0 0 0 0 0 0 0
+  Kdata (Mb): 3.8147e-06 ave 3.8147e-06 max 3.8147e-06 min
+  Histogram:  2 0 0 0 0 0 0 0 0 0
+  Vdata (Mb): 3.8147e-06 ave 3.8147e-06 max 3.8147e-06 min
+  Histogram:  2 0 0 0 0 0 0 0 0 0
+Collate time (secs) = 0.195844
+Collate KMV =   KMV pairs:  0.5 ave 1 max 0 min
+  Histogram:  1 0 0 0 0 0 0 0 0 1
+  Kdata (Mb): 1.90735e-06 ave 3.8147e-06 max 0 min
+  Histogram:  1 0 0 0 0 0 0 0 0 1
+  Vdata (Mb): 3.8147e-06 ave 7.62939e-06 max 0 min
+  Histogram:  1 0 0 0 0 0 0 0 0 1
+Collate Comm = 1.53e-05 Mb send, 1.53e-05 Mb recv
+  Send (Mb):  7.62939e-06 ave 1.52588e-05 max 0 min
+  Histogram:  1 0 0 0 0 0 0 0 0 1
+  Recv (Mb):  7.62939e-06 ave 1.52588e-05 max 0 min
+  Histogram:  1 0 0 0 0 0 0 0 0 1
+Reduce time (secs) = 0.001369
+Reduce KV =   KV pairs:   0.5 ave 1 max 0 min
+  Histogram:  1 0 0 0 0 0 0 0 0 1
+  Kdata (Mb): 1.90735e-06 ave 3.8147e-06 max 0 min
+  Histogram:  1 0 0 0 0 0 0 0 0 1
+  Vdata (Mb): 1.90735e-06 ave 3.8147e-06 max 0 min
+  Histogram:  1 0 0 0 0 0 0 0 0 1
+nelements_in = 100000000 
+nelements_out = 1 
+MR stats = 7 max pages any proc, 1.43e+04 Mb, 0 Mb max file size all procs
+  Pages:      7 ave 7 max 7 min
+  Histogram:  2 0 0 0 0 0 0 0 0 0
+MapReduce-MPI (7 Apr 2014)
+Cummulative hi-water mem = 1.43e+04 Mb any proc, 28 Gb all procs
+Cummulative comm = 1.53e-05 Mb send, 1.53e-05 Mb recv, 6.82e-05 secs
+  Send (Mb):  7.62939e-06 ave 1.52588e-05 max 0 min
+  Histogram:  1 0 0 0 0 0 0 0 0 1
+  Recv (Mb):  7.62939e-06 ave 1.52588e-05 max 0 min
+  Histogram:  1 0 0 0 0 0 0 0 0 1
+Time = 7.25236 (secs)
+nelements_in = 100000000 
+nelements_out = 1 
+nelements_in = 100000000 
+nelements_out = 1 
+nelements_in = 100000000 
+nelements_out = 1 
+Map time (secs) = 1.4711
+Map KV =   KV pairs:   2.5e+07 ave 2.5e+07 max 2.5e+07 min
+  Histogram:  4 0 0 0 0 0 0 0 0 0
+  Kdata (Mb): 95.3674 ave 95.3674 max 95.3674 min
+  Histogram:  4 0 0 0 0 0 0 0 0 0
+  Vdata (Mb): 95.3674 ave 95.3674 max 95.3674 min
+  Histogram:  4 0 0 0 0 0 0 0 0 0
+Compress time (secs) = 2.24273
+Compress KV =   KV pairs:   1 ave 1 max 1 min
+  Histogram:  4 0 0 0 0 0 0 0 0 0
+  Kdata (Mb): 3.8147e-06 ave 3.8147e-06 max 3.8147e-06 min
+  Histogram:  4 0 0 0 0 0 0 0 0 0
+  Vdata (Mb): 3.8147e-06 ave 3.8147e-06 max 3.8147e-06 min
+  Histogram:  4 0 0 0 0 0 0 0 0 0
+Collate time (secs) = 0.208082
+Collate KMV =   KMV pairs:  0.25 ave 1 max 0 min
+  Histogram:  3 0 0 0 0 0 0 0 0 1
+  Kdata (Mb): 9.53674e-07 ave 3.8147e-06 max 0 min
+  Histogram:  3 0 0 0 0 0 0 0 0 1
+  Vdata (Mb): 3.8147e-06 ave 1.52588e-05 max 0 min
+  Histogram:  3 0 0 0 0 0 0 0 0 1
+Collate Comm = 4.58e-05 Mb send, 4.58e-05 Mb recv
+  Send (Mb):  1.14441e-05 ave 1.52588e-05 max 0 min
+  Histogram:  1 0 0 0 0 0 0 0 0 3
+  Recv (Mb):  1.14441e-05 ave 4.57764e-05 max 0 min
+  Histogram:  3 0 0 0 0 0 0 0 0 1
+Reduce time (secs) = 0.00172305
+Reduce KV =   KV pairs:   0.25 ave 1 max 0 min
+  Histogram:  3 0 0 0 0 0 0 0 0 1
+  Kdata (Mb): 9.53674e-07 ave 3.8147e-06 max 0 min
+  Histogram:  3 0 0 0 0 0 0 0 0 1
+  Vdata (Mb): 9.53674e-07 ave 3.8147e-06 max 0 min
+  Histogram:  3 0 0 0 0 0 0 0 0 1
+nelements_in = 100000000 
+nelements_out = 1 
+MR stats = 7 max pages any proc, 1.43e+04 Mb, 0 Mb max file size all procs
+  Pages:      7 ave 7 max 7 min
+  Histogram:  4 0 0 0 0 0 0 0 0 0
+MapReduce-MPI (7 Apr 2014)
+Cummulative hi-water mem = 1.43e+04 Mb any proc, 56 Gb all procs
+Cummulative comm = 4.58e-05 Mb send, 4.58e-05 Mb recv, 0.000107 secs
+  Send (Mb):  1.14441e-05 ave 1.52588e-05 max 0 min
+  Histogram:  1 0 0 0 0 0 0 0 0 3
+  Recv (Mb):  1.14441e-05 ave 4.57764e-05 max 0 min
+  Histogram:  3 0 0 0 0 0 0 0 0 1
+Time = 3.92408 (secs)

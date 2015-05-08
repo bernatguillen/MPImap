@@ -1,0 +1,134 @@
+nelements_in = 100000000 
+nelements_out = 1 
+Map time (secs) = 17.2168
+Map KV =   KV pairs:   5e+07 ave 5e+07 max 5e+07 min
+  Histogram:  2 0 0 0 0 0 0 0 0 0
+  Kdata (Mb): 190.735 ave 190.735 max 190.735 min
+  Histogram:  2 0 0 0 0 0 0 0 0 0
+  Vdata (Mb): 190.735 ave 190.735 max 190.735 min
+  Histogram:  2 0 0 0 0 0 0 0 0 0
+Map I/O = 0 Mb read, 1.53e+03 Mb write
+  Read (Mb):  0 ave 0 max 0 min
+  Histogram:  2 0 0 0 0 0 0 0 0 0
+  Write (Mb): 762.939 ave 762.939 max 762.939 min
+  Histogram:  2 0 0 0 0 0 0 0 0 0
+Compress time (secs) = 10.352
+Compress KV =   KV pairs:   1 ave 1 max 1 min
+  Histogram:  2 0 0 0 0 0 0 0 0 0
+  Kdata (Mb): 3.8147e-06 ave 3.8147e-06 max 3.8147e-06 min
+  Histogram:  2 0 0 0 0 0 0 0 0 0
+  Vdata (Mb): 3.8147e-06 ave 3.8147e-06 max 3.8147e-06 min
+  Histogram:  2 0 0 0 0 0 0 0 0 0
+Compress I/O = 3.05e+03 Mb read, 763 Mb write
+  Read (Mb):  1525.88 ave 1525.88 max 1525.88 min
+  Histogram:  2 0 0 0 0 0 0 0 0 0
+  Write (Mb): 381.471 ave 381.471 max 381.471 min
+  Histogram:  2 0 0 0 0 0 0 0 0 0
+Collate time (secs) = 0.009166
+Collate KMV =   KMV pairs:  0.5 ave 1 max 0 min
+  Histogram:  1 0 0 0 0 0 0 0 0 1
+  Kdata (Mb): 1.90735e-06 ave 3.8147e-06 max 0 min
+  Histogram:  1 0 0 0 0 0 0 0 0 1
+  Vdata (Mb): 3.8147e-06 ave 7.62939e-06 max 0 min
+  Histogram:  1 0 0 0 0 0 0 0 0 1
+Collate Comm = 1.53e-05 Mb send, 1.53e-05 Mb recv
+  Send (Mb):  7.62939e-06 ave 1.52588e-05 max 0 min
+  Histogram:  1 0 0 0 0 0 0 0 0 1
+  Recv (Mb):  7.62939e-06 ave 1.52588e-05 max 0 min
+  Histogram:  1 0 0 0 0 0 0 0 0 1
+Reduce time (secs) = 0.00133395
+Reduce KV =   KV pairs:   0.5 ave 1 max 0 min
+  Histogram:  1 0 0 0 0 0 0 0 0 1
+  Kdata (Mb): 1.90735e-06 ave 3.8147e-06 max 0 min
+  Histogram:  1 0 0 0 0 0 0 0 0 1
+  Vdata (Mb): 1.90735e-06 ave 3.8147e-06 max 0 min
+  Histogram:  1 0 0 0 0 0 0 0 0 1
+nelements_in = 100000000 
+nelements_out = 1 
+MR stats = 7 max pages any proc, 448 Mb, 1.53e+03 Mb max file size all procs
+  Pages:      7 ave 7 max 7 min
+  Histogram:  2 0 0 0 0 0 0 0 0 0
+  Files:      762.939 ave 762.939 max 762.939 min
+  Histogram:  2 0 0 0 0 0 0 0 0 0
+MapReduce-MPI (7 Apr 2014)
+Cummulative hi-water mem = 448 Mb any proc, 0.875 Gb all procs
+Cummulative comm = 1.53e-05 Mb send, 1.53e-05 Mb recv, 7.75e-05 secs
+  Send (Mb):  7.62939e-06 ave 1.52588e-05 max 0 min
+  Histogram:  1 0 0 0 0 0 0 0 0 1
+  Recv (Mb):  7.62939e-06 ave 1.52588e-05 max 0 min
+  Histogram:  1 0 0 0 0 0 0 0 0 1
+Cummulative I/O = 3.05e+03 Mb read, 2.29e+03 Mb write
+  Read (Mb):  1525.88 ave 1525.88 max 1525.88 min
+  Histogram:  2 0 0 0 0 0 0 0 0 0
+  Write (Mb): 1144.41 ave 1144.41 max 1144.41 min
+  Histogram:  2 0 0 0 0 0 0 0 0 0
+Time = 27.5797 (secs)
+nelements_in = 100000000 
+nelements_out = 1 
+nelements_in = 100000000 
+nelements_out = 1 
+nelements_in = 100000000 
+nelements_out = 1 
+Map time (secs) = 15.7434
+Map KV =   KV pairs:   2.5e+07 ave 2.5e+07 max 2.5e+07 min
+  Histogram:  4 0 0 0 0 0 0 0 0 0
+  Kdata (Mb): 95.3674 ave 95.3674 max 95.3674 min
+  Histogram:  4 0 0 0 0 0 0 0 0 0
+  Vdata (Mb): 95.3674 ave 95.3674 max 95.3674 min
+  Histogram:  4 0 0 0 0 0 0 0 0 0
+Map I/O = 0 Mb read, 1.53e+03 Mb write
+  Read (Mb):  0 ave 0 max 0 min
+  Histogram:  4 0 0 0 0 0 0 0 0 0
+  Write (Mb): 381.47 ave 381.47 max 381.47 min
+  Histogram:  4 0 0 0 0 0 0 0 0 0
+Compress time (secs) = 8.71742
+Compress KV =   KV pairs:   1 ave 1 max 1 min
+  Histogram:  4 0 0 0 0 0 0 0 0 0
+  Kdata (Mb): 3.8147e-06 ave 3.8147e-06 max 3.8147e-06 min
+  Histogram:  4 0 0 0 0 0 0 0 0 0
+  Vdata (Mb): 3.8147e-06 ave 3.8147e-06 max 3.8147e-06 min
+  Histogram:  4 0 0 0 0 0 0 0 0 0
+Compress I/O = 3.05e+03 Mb read, 763 Mb write
+  Read (Mb):  762.94 ave 762.94 max 762.94 min
+  Histogram:  4 0 0 0 0 0 0 0 0 0
+  Write (Mb): 190.736 ave 190.736 max 190.736 min
+  Histogram:  4 0 0 0 0 0 0 0 0 0
+Collate time (secs) = 0.0106859
+Collate KMV =   KMV pairs:  0.25 ave 1 max 0 min
+  Histogram:  3 0 0 0 0 0 0 0 0 1
+  Kdata (Mb): 9.53674e-07 ave 3.8147e-06 max 0 min
+  Histogram:  3 0 0 0 0 0 0 0 0 1
+  Vdata (Mb): 3.8147e-06 ave 1.52588e-05 max 0 min
+  Histogram:  3 0 0 0 0 0 0 0 0 1
+Collate Comm = 4.58e-05 Mb send, 4.58e-05 Mb recv
+  Send (Mb):  1.14441e-05 ave 1.52588e-05 max 0 min
+  Histogram:  1 0 0 0 0 0 0 0 0 3
+  Recv (Mb):  1.14441e-05 ave 4.57764e-05 max 0 min
+  Histogram:  3 0 0 0 0 0 0 0 0 1
+Reduce time (secs) = 0.00168014
+Reduce KV =   KV pairs:   0.25 ave 1 max 0 min
+  Histogram:  3 0 0 0 0 0 0 0 0 1
+  Kdata (Mb): 9.53674e-07 ave 3.8147e-06 max 0 min
+  Histogram:  3 0 0 0 0 0 0 0 0 1
+  Vdata (Mb): 9.53674e-07 ave 3.8147e-06 max 0 min
+  Histogram:  3 0 0 0 0 0 0 0 0 1
+nelements_in = 100000000 
+nelements_out = 1 
+MR stats = 7 max pages any proc, 448 Mb, 1.53e+03 Mb max file size all procs
+  Pages:      7 ave 7 max 7 min
+  Histogram:  4 0 0 0 0 0 0 0 0 0
+  Files:      381.47 ave 381.47 max 381.47 min
+  Histogram:  4 0 0 0 0 0 0 0 0 0
+MapReduce-MPI (7 Apr 2014)
+Cummulative hi-water mem = 448 Mb any proc, 1.75 Gb all procs
+Cummulative comm = 4.58e-05 Mb send, 4.58e-05 Mb recv, 0.000116 secs
+  Send (Mb):  1.14441e-05 ave 1.52588e-05 max 0 min
+  Histogram:  1 0 0 0 0 0 0 0 0 3
+  Recv (Mb):  1.14441e-05 ave 4.57764e-05 max 0 min
+  Histogram:  3 0 0 0 0 0 0 0 0 1
+Cummulative I/O = 3.05e+03 Mb read, 2.29e+03 Mb write
+  Read (Mb):  762.94 ave 762.94 max 762.94 min
+  Histogram:  4 0 0 0 0 0 0 0 0 0
+  Write (Mb): 572.206 ave 572.206 max 572.206 min
+  Histogram:  4 0 0 0 0 0 0 0 0 0
+Time = 24.4738 (secs)
