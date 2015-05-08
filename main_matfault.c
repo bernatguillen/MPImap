@@ -270,12 +270,12 @@ int main(int argc, char **argv){
     for(i = 0; i<rows; ++i){
       C[i] = &(dataC[NCB*i]);
     }
-    /*    srand((unsigned) time(NULL));
+    srand((unsigned) time(NULL));
     if(((double)rand())/RAND_MAX < p && myid < nprocs-1){
-      printf("Node %d failed from node\n",myid);
+      fin =1 ;
+      MPI_Cancel(ireq);
       MPI_Finalize();
-      }*/
-    if(myid == 1) MPI_Finalize();
+    }
     for(k = 0; k<NCB; ++k){
       for(i = 0; i<rows; ++i){
 	C[i][k] = 0.0;
