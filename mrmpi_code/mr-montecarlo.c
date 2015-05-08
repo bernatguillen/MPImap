@@ -21,10 +21,11 @@
 #include "cmapreduce.h"
 
 #define MASTER 0
-#define NSAMPLES 1E6
+#define NSAMPLES 1E8
 
 void map(int itask, void *kv, void *ptr);
 void reduce(char *key, int keybytes,char *multivalue, int nvalues, int *valuebytes, void *kv, void *ptr);
+void compress(char *, int, char *, int, int *, void *KVptr, void *APPptr);
 
 double rhs(double *x){
   return(x[0]*x[0]+x[1]*x[1]);
@@ -46,6 +47,7 @@ int main(int argc, char **argv)
   void *mr = MR_create(MPI_COMM_WORLD);
   MR_set_verbosity(mr,2);
   MR_set_timer(mr,1);
+  MR_set_memsize(mr, 2048);
 
   tstart = MPI_Wtime();
   time_t t;
@@ -56,10 +58,12 @@ int main(int argc, char **argv)
   ntotal = nlocal*nprocs;
 
   nelements_in = MR_map(mr,nprocs,&map,&nlocal); 
-  /* Redistribute all the block KVs to consistent processors */
   /* Turn the KV into a KVM since they all have the same key */
+  /*Reduce locally to make collate faster */
+  MR_compress(mr,&compress,NULL);
   MR_collate(mr, NULL); //both aggregates and converts to KVM
   nelements_out = MR_reduce(mr,&reduce,NULL);
+
   printf("nelements_in = %d \n", (int) nelements_in); 
   printf("nelements_out = %d \n", (int) nelements_out); 
   MPI_Barrier(MPI_COMM_WORLD);
@@ -102,3 +106,12 @@ void reduce(char *key, int keybytes,char *multivalue, int nvalues, int *valuebyt
   MR_kv_add(kv,(char *) &new_key,sizeof(int),(char *) &total_hits,sizeof(int));
 
 } 
+ 
+void compress(char *key, int keybytes, char *value, int nvalues, int *valuebytes, void *kv, void *APPptr){
+  int i;
+  int total=0;
+  for (i=0; i<nvalues; ++i)
+    total += *((int *) value); 
+  MR_kv_add(kv,(char *)key,sizeof(int),(char *) &value,sizeof(int));
+    
+}

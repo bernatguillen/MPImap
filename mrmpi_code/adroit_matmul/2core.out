@@ -1,0 +1,29 @@
+Map time (secs) = 46.8916
+Map KV = 100000000 pairs, 1.53e+03 Mb keys, 2.29e+03 Mb values, 4.58e+03 Mb, 4 pages
+Map I/O = 0 Mb read, 4.58e+03 Mb write
+WARNING: Bad KV fread on proc 0: 0 2147483648
+WARNING: Bad KV fread on proc 1: 0 2147483648
+WARNING: Bad KV fread on proc 0: 0 252516864
+WARNING: Bad KV fread on proc 1: 0 252516864
+Sort_keys time (secs) = 42.3061
+Sort_keys KV = 100000000 pairs, 1e+03 Mb keys, 1.5e+03 Mb values, 3.26e+03 Mb, 2 pages
+Sort_keys I/O = 4.58e+03 Mb read, 0 Mb write
+Collate time (secs) = 29.9763
+Collate KMV = 555002 pairs, 8.47 Mb keys, 1.5e+03 Mb values, 1.9e+03 Mb, 2 pages
+Collate Comm = 1.63e+03 Mb send, 1.63e+03 Mb recv
+Reduce time (secs) = 0.182749
+Reduce KV = 1555000 pairs, 11.9 Mb keys, 11.9 Mb values, 35.6 Mb, 2 pages
+nelements_in = 100000000 
+Gather time (secs) = 0.0151601
+Gather KV = 1555000 pairs, 11.9 Mb keys, 11.9 Mb values, 35.6 Mb, 2 pages
+Gather Comm = 17.8 Mb send, 17.8 Mb recv
+nelements_out = 1555000 
+MR stats = 7 max pages any proc, 1.43e+04 Mb, 4.58e+03 Mb max file size all procs
+MapReduce-MPI (7 Apr 2014)
+Cummulative hi-water mem = 1.43e+04 Mb any proc, 28 Gb all procs
+Cummulative comm = 1.65e+03 Mb send, 1.65e+03 Mb recv, 1.84 secs
+Cummulative I/O = 4.58e+03 Mb read, 4.58e+03 Mb write
+Time to mapreduce = 119.373 (secs)
+slurmstepd: Exceeded step memory limit at some point. Step may have been partially swapped out to disk.
+slurmstepd: Exceeded job memory limit at some point. Job may have been partially swapped out to disk.
+slurmstepd: Exceeded job memory limit at some point. Job may have been partially swapped out to disk.

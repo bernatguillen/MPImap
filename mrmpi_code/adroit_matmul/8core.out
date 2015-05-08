@@ -1,0 +1,19 @@
+Map time (secs) = 0.09989
+Map KV = 25000000 pairs, 381 Mb keys, 572 Mb values, 1.14e+03 Mb, 8 pages
+Sort_keys time (secs) = 1.2967
+Sort_keys KV = 25000000 pairs, 381 Mb keys, 572 Mb values, 1.14e+03 Mb, 8 pages
+Collate time (secs) = 1.041
+Collate KMV = 269600 pairs, 4.11 Mb keys, 572 Mb values, 675 Mb, 8 pages
+Collate Comm = 1e+03 Mb send, 1e+03 Mb recv
+Reduce time (secs) = 0.0239401
+Reduce KV = 1944000 pairs, 14.8 Mb keys, 14.8 Mb values, 44.5 Mb, 8 pages
+nelements_in = 25000000 
+Gather time (secs) = 0.023746
+Gather KV = 1944000 pairs, 14.8 Mb keys, 14.8 Mb values, 44.5 Mb, 8 pages
+Gather Comm = 38.9 Mb send, 38.9 Mb recv
+nelements_out = 1944000 
+MR stats = 7 max pages any proc, 1.43e+04 Mb, 0 Mb max file size all procs
+MapReduce-MPI (7 Apr 2014)
+Cummulative hi-water mem = 1.43e+04 Mb any proc, 112 Gb all procs
+Cummulative comm = 1.04e+03 Mb send, 1.04e+03 Mb recv, 0.326 secs
+Time to mapreduce = 2.48577 (secs)

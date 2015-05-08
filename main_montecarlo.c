@@ -42,7 +42,7 @@ int main(int argc, char **argv){
   srand(time(NULL));
   if(myid == MASTER){
     time_s = MPI_Wtime();
-    for(int i = 0; i<Nodesamp; ++i){
+    for(i = 0; i<Nodesamp; ++i){
       x[0] = ((double) rand())/RAND_MAX*2 - 1;
       x[1] = ((double) rand())/RAND_MAX*2 - 1;
       res += rhs(x) < 1 ? 1:0;
@@ -52,7 +52,7 @@ int main(int argc, char **argv){
     printf("Time elapsed: %lf \n", time_f-time_s);
     printf("Estimation of pi: %lf \n", 4*((double)resf)/Nsamples);
   }else{
-    for(int i = 0; i<Nodesamp; ++i){
+    for(i = 0; i<Nodesamp; ++i){
       x[0] = ((double) rand())/RAND_MAX*2 - 1;
       x[1] = ((double) rand())/RAND_MAX*2 - 1;
       res += rhs(x) < 1 ? 1:0;

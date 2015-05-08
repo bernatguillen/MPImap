@@ -28,9 +28,9 @@ Syntax: NRA NCA NCB
 
 #define MASTER 0
 	/*For now, hardcode size of matrices and submatrices */
-#define NRA 100
-#define NCA 100
-#define NCB 100
+#define NRA 1000
+#define NCA 1000
+#define NCB 1000
 #define  IB 10 //number of rows in A blocks
 #define  KB 10 //number of columns in A blocks
 #define  JB 10 //number of columns in C blocks
@@ -106,10 +106,9 @@ int main(int argc, char **argv)
 
   /*Create MapReduce object */
   void *mr = MR_create(MPI_COMM_WORLD);
-  // not sure these are documented in manual:
-  MR_set_verbosity(mr,2);
+  MR_set_verbosity(mr,1);
   MR_set_timer(mr,1);
-
+  MR_set_memsize(mr, 2048);
   MPI_Barrier(MPI_COMM_WORLD);
   tstart = MPI_Wtime();
 
@@ -151,12 +150,12 @@ int main(int argc, char **argv)
   blocks.extra2 = -1; 
 
   nelements_out = MR_reduce(mr,&reduce,&blocks);
-  printf("nelements_in = %d \n", (int) nelements_in); 
+  if (me == 0)
+    printf("nelements_in = %d \n", (int) nelements_in); 
   /*one block still needs to be emitted */
   void *kv = MR_get_kv(mr);
   int ibase,jbase,j;
   int new_key[2];
-  printf("sib %d\n",blocks.ntasks);
   if (blocks.ntasks != -1){ //Emit the last completed C block
       ibase = (blocks.ntasks)*IB;
       jbase =(blocks.extra1)*JB;
@@ -170,7 +169,8 @@ int main(int argc, char **argv)
     } 
   /*Collect result on MASTER */
   nelements_out = MR_gather(mr,1);
-  printf("nelements_out = %d \n", (int) nelements_out);
+  if (me == 0)
+    printf("nelements_out = %d \n", (int) nelements_out);
   
   //unclear if we are getting the correct net total of KV pairs
   // for 100x100 matrices with 10 row, 10 column blocks
