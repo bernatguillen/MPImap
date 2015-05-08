@@ -194,9 +194,9 @@ int main(int argc, char **argv){
     while(count < nworkers){
       if(working[source] == MPI_SUCCESS && MPI_Wtime() - time_w[source] >= waiting[source]){
 	if(waiting[source] == 0){
-	  MPI_Isend(&rdy,1,MPI_INT,source,FROM_MASTER,MPI_COMM_WORLD, ireq);
+	  MPI_Isend(&rdy,1,MPI_INT,source,FROM_MASTER,MPI_COMM_WORLD, ireq+source);
 	}
-	MPI_Test(ireq,&flags[source],&stat);
+	MPI_Test(ireq+source,&flags[source],&stat);
 	if(flags[source]){
 	  MPI_Send(&go,1,MPI_INT,source,FROM_MASTER,MPI_COMM_WORLD);
 	  MPI_Recv(&offset, 1, MPI_INT, source, mtype, MPI_COMM_WORLD, &stat);
