@@ -24,7 +24,7 @@ int main(int argc, char **argv){
   nworkers = nprocs - 1;
   MPI_Status stat;
   MPI_Request *ireq;
-  ireq = (MPI_Request *) malloc(nworkers);
+  ireq = (MPI_Request *) malloc(nprocs);
   if(nprocs < 2 || argc != 2){
     if (myid == MASTER)
       printf("usage: main_matmul Nsamples \n NRA: number of points to sample\n");
