@@ -26,21 +26,23 @@ int main(int argc, char **argv){
   MPI_Comm_rank(MPI_COMM_WORLD,&myid);
   MPI_Comm_size(MPI_COMM_WORLD,&nprocs);
   nworkers = nprocs - 1;
-  if(nprocs < 2 || argc != 2){
+  if(nprocs < 2 || argc != 3){
     if (myid == MASTER)
-      printf("usage: montefault Nsamples \n NRA: number of points to sample\n");
+      printf("usage: montefault Nsamples pfailure \n NRA: number of points to sample\n");
     MPI_Abort(MPI_COMM_WORLD, rc);
     exit(1);
   }
   /* Dynamically allocate vectors */
   Nsamples = atoi(argv[1]);
+  double p_fail = atof(argv[2]);
   Nodesamp = ((int)ceil(((double)Nsamples)/nprocs));
   Nsamples = Nodesamp*nprocs;
   double x[2];
   int resf=0;
   double time_s, time_f;
+  double time_e=1.0;
   int res = 0;
-  srand(myid*time(NULL));
+  srand(time(NULL)+getpid()+myid*nprocs);
   if(myid == MASTER){
     time_s = MPI_Wtime();
     int i=0;
@@ -92,7 +94,7 @@ int main(int argc, char **argv){
 	t_w[dest] = MPI_Wtime();
       }
       taux = MPI_Wtime();
-      if(!done[dest] && (taux - t_w[dest]) >= ((double) waiting[dest])/(5*nprocs)){
+      if(!done[dest] && (taux - t_w[dest]) >= ((double) waiting[dest])*time_e/5){
 	MPI_Test(&ireq[dest],&done[dest],&stat);
 	if(!done[dest]){
 	  ++waiting[dest];
@@ -103,14 +105,15 @@ int main(int argc, char **argv){
 	      x[0] = ((double) rand())/RAND_MAX*2 - 1;
 	      x[1] = ((double) rand())/RAND_MAX*2 - 1;
 	      resf += rhs(x) < 1 ? 1:0;
-	      ++count;
-	      done[dest] = 1;
 	    }
+	    ++count;
+	    done[dest] = 1;
 	  }
 	}else{
 	  MPI_Sendrecv(&rdy, 1, MPI_INT, dest, FROM_MASTER_RDY, &res, 1, MPI_INT, dest, FROM_WORKER, MPI_COMM_WORLD, &stat);
 	  resf+=res;
 	  ++count;
+	  time_e = (taux-t_w[dest]<time_e ? taux-t_w[dest]:time_e);
 	  done[dest] = 1;
 	}
       }
@@ -130,32 +133,32 @@ int main(int argc, char **argv){
     free(done);
     free(waiting);
     free(t_w);
-  }else if(myid>1){
-    printf("Process %d\n",myid);
-    fflush(stdout);
-    int i;
-    srand(time(NULL));
-    for(i = 0; i<Nodesamp; ++i){
-      x[0] = ((double) rand())/RAND_MAX*2 - 1;
-      x[1] = ((double) rand())/RAND_MAX*2 - 1;
-      res += rhs(x) < 1 ? 1:0;
-    }
-    int msg;
-    MPI_Recv(&msg, 1, MPI_INT, MASTER, FROM_MASTER_RDY, MPI_COMM_WORLD, &stat);
-    MPI_Send(&msg, 1, MPI_INT, MASTER, FROM_WORKER_RDY, MPI_COMM_WORLD);
-    MPI_Recv(&msg, 1, MPI_INT, MASTER, FROM_MASTER_RDY, MPI_COMM_WORLD, &stat);
-    if(msg == 1){
-      MPI_Sendrecv(&res, 1, MPI_INT, MASTER, FROM_WORKER,&msg,1,MPI_INT,MASTER,FROM_MASTER_RDY, MPI_COMM_WORLD, &stat);
-    }
-    while(msg == 1){
-      if(msg==1){
-	res = 0;
-	for(int i = 0; i<Nodesamp; ++i){
-	  x[0] = ((double) rand())/RAND_MAX*2 - 1;
-	  x[1] = ((double) rand())/RAND_MAX*2 - 1;
-	  res += rhs(x) < 1 ? 1:0;
+  }else{
+    srand(time(NULL) + getpid() + myid*nprocs);
+    if(rand()/((double)RAND_MAX)>=p_fail){
+      int i;
+      for(i = 0; i<Nodesamp; ++i){
+	x[0] = ((double) rand())/RAND_MAX*2 - 1;
+	x[1] = ((double) rand())/RAND_MAX*2 - 1;
+	res += rhs(x) < 1 ? 1:0;
+      }
+      int msg;
+      MPI_Recv(&msg, 1, MPI_INT, MASTER, FROM_MASTER_RDY, MPI_COMM_WORLD, &stat);
+      MPI_Send(&msg, 1, MPI_INT, MASTER, FROM_WORKER_RDY, MPI_COMM_WORLD);
+      MPI_Recv(&msg, 1, MPI_INT, MASTER, FROM_MASTER_RDY, MPI_COMM_WORLD, &stat);
+      if(msg == 1){
+	MPI_Sendrecv(&res, 1, MPI_INT, MASTER, FROM_WORKER,&msg,1,MPI_INT,MASTER,FROM_MASTER_RDY, MPI_COMM_WORLD, &stat);
+      }
+      while(msg == 1){
+	if(msg==1){
+	  res = 0;
+	  for(int i = 0; i<Nodesamp; ++i){
+	    x[0] = ((double) rand())/RAND_MAX*2 - 1;
+	    x[1] = ((double) rand())/RAND_MAX*2 - 1;
+	    res += rhs(x) < 1 ? 1:0;
+	  }
+	  MPI_Sendrecv(&res, 1, MPI_INT, MASTER, FROM_WORKER, &msg,1,MPI_INT,MASTER,FROM_MASTER_RDY,MPI_COMM_WORLD, &stat);
 	}
-	MPI_Sendrecv(&res, 1, MPI_INT, MASTER, FROM_WORKER, &msg,1,MPI_INT,MASTER,FROM_MASTER_RDY,MPI_COMM_WORLD, &stat);
       }
     }
   }
